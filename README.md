@@ -1,8 +1,8 @@
 ### About me
-Currently NO inspirations, working slowly
+Currently NO inspirations, working slowly  
 Now aiming at [him](https://github.com/Herself32).
 ***
-The repository **[2xh](https://github.com/2xh/2xh/)** is a collection of small programs. (Undone)
+The repository **[2xh](https://github.com/2xh/2xh/)** is a collection of small programs. (Undone)  
 For discussions, go **[here](https://github.com/2xh/2xh/discussions)**
 <!--
 **2xh/2xh** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
