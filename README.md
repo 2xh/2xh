@@ -1,6 +1,6 @@
 ### About me
-LOW efficiency during weekdays...  
-Now standing on [his](https://github.com/Herself32) shoulder.
+Well, time flies...  
+Now separating from [him](https://github.com/Herself32), to discover a new world.
 ***
 The repository **[2xh](https://github.com/2xh/2xh/)** will be a collection of small programs.  
 For discussions, go **[here](https://github.com/2xh/2xh/discussions)**
