@@ -1,9 +1,8 @@
 ### About me
 Well, time flies...  
-Now separating from [him](https://github.com/Herself32), to discover a new world.
+Now studying [CS](# "Computer Science") , to discover a new world.
 ***
-The repository **[2xh](https://github.com/2xh/2xh/)** will be a collection of small programs.  
-For discussions, go **[here](https://github.com/2xh/2xh/discussions)**
+This repository **[2xh](https://github.com/2xh/2xh/)** will be a collection of small programs.
 <!--
 **2xh/2xh** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 
