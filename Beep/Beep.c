@@ -19,8 +19,8 @@ int main(int argv,char** argc)
 		else if (i < 2)
 		{
 			printf("Error when parsing input!\nIgnoring note %d\n", argv - n);
-			if (n > 0)
-				scanf("%*[^\n]");
+			if (n <= 0)
+				scanf("%*[^0-9]");
 			n--;
 			continue;
 		}
