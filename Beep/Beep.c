@@ -1,6 +1,6 @@
 ﻿#include <stdio.h>
 #include <windows.h>
-int main(int argv,char** argc)
+int main(int argv, char** argc)
 {
 	unsigned f, t;
 	int n = argv - 1, i;
@@ -18,7 +18,7 @@ int main(int argv,char** argc)
 			break;
 		else if (i < 2)
 		{
-			printf("Error when parsing input!\nIgnoring note %d\n", argv - n);
+			fprintf(stderr, "Error when parsing input!\nIgnoring note %d\n", argv - n);
 			if (n <= 0)
 				scanf("%*[^0-9]");
 			n--;
@@ -29,10 +29,12 @@ int main(int argv,char** argc)
 		else if (f == 0)
 			Sleep(t);
 		else if (!Beep(f, t))
-			printf("Error when playing %uHz for %ums\n", f, t);
+			fprintf(stderr, "Error when playing %uHz for %ums\n", f, t);
 		else
-			printf("\x0E\n");
+			printf("\x0E");
 		n--;
+		if (n <= 0)
+			printf("\n");
 	} while (n);
 	printf("You have played %d notes!\nBye!", argv - 1 - n);
 	return 0;
