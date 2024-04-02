@@ -1,8 +1,7 @@
 ### About me
-Well, time flies...  
-Now studying [CS](# "Computer Science") , to discover a new world.
+[CS](# "Computer Science") student
 ***
-This repository **[2xh](https://github.com/2xh/2xh/)** will be a collection of small programs.
+This repository **[2xh](https://github.com/2xh/2xh/)** contains something not needed to create standalone one.
 <!--
 **2xh/2xh** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 
