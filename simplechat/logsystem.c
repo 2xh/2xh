@@ -4,7 +4,7 @@
 int logready=0;
 int log_to_file=1;
 FILE *logfile;
-int init_log(char *logname)
+int init_log(const char *logname)
 {
 	if(logready)
 	{
@@ -43,7 +43,7 @@ int close_log(void)
 		return 0;
 	}
 }
-int logmsg(int type,char *msg,...)
+int logmsg(const int type,const char *msg,...)
 {
 	time_t t=time(NULL);
 	char time_prefix[11];
