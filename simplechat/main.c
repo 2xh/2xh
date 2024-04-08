@@ -108,7 +108,7 @@ int main(int argc,char **argv)
 	else if(inet_pton(AF_INET6,address,&addr.s6.sin6_addr)>0)
 		addr.s6.sin6_family=AF_INET6,addrlen=sizeof(addr.s6);
 	else if(is_server)
-		addr.s4.sin_addr.s_addr=INADDR_ANY,addr.s4.sin_family=AF_INET,addrlen=sizeof(addr.s4),logmsg(1,"No IP address or a wrong one is provided, binding to all IPv4 addresses");
+		addr.s4.sin_addr.s_addr=INADDR_ANY,addr.s4.sin_family=AF_INET,addrlen=sizeof(addr.s4),logmsg(2,"No IP address or a wrong one is provided, binding to all IPv4 addresses");
 	else
 	{
 		logmsg(3,"Neither IPv4 nor IPv6 address");
