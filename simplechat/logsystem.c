@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdarg.h>
+#define LOG_LEVEL 1
 int logready=0;
 int log_to_file=1;
 FILE *logfile;
@@ -51,6 +52,8 @@ int logmsg(const int type,const char *msg,...)
 	va_list args;
 	if(!logready)
 		return -1;
+	if(type<LOG_LEVEL)
+		return 1;
 	if(strftime(time_prefix,11,"[%X]",localtime(&t)))
 		fprintf(logfile,"%s ",time_prefix);
 	switch(type)

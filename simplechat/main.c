@@ -42,6 +42,26 @@ void cleanup(void)
 	if(sock>=0)
 		close(sock);
 }
+int quickmsg(const char *msgname,const unsigned int n)
+{
+	int i;
+	FILE *msgfile;
+	if((msgfile=fopen(msgname,"r"))==NULL)
+	{
+		perror("Failed to open msgfile");
+		return -1;
+	}
+	for(i=0;i<n&&!feof(msgfile);i++)
+		fgets(msg,MSG_LENGTH,msgfile);
+	fclose(msgfile);
+	if(i<n)
+	{
+		fputs("Too few lines\n",stderr);
+		return -1;
+	}
+	else
+		return 0;
+}
 int main(int argc,char **argv)
 {
 	//初始化
@@ -152,7 +172,7 @@ int main(int argc,char **argv)
 		else
 		{
 			logmsg(1,"Socket listening");
-			fputs("Ready to receive connection\n",stderr);
+			puts("Ready to receive connection");
 		}
 	else
 	{
@@ -170,13 +190,13 @@ int main(int argc,char **argv)
 				return -2;
 			}
 			else
-				fprintf(stderr,"Retrying now.\n");
+				fputs("Retrying now.\n",stderr);
 			goto connect;
 		}
 		else
 		{
 			logmsg(1,"Connected");
-			fprintf(stderr,"Ready to chat\n");
+			puts("Ready to chat");
 		}
 	}
 	ready=1;
@@ -193,12 +213,10 @@ int main(int argc,char **argv)
 		fputs("Chat client not available due to thread error\n",stderr);
 	}
 	char* const commands[]={"/help","/list","/qmsg","/reconnect","/exit"};
-	FILE *msgfile;
+	int msg_no;
 	while(ready)
 	{
-		fgets(msg,MSG_LENGTH,stdin); //C11标准移除了gets()，只能用fgets()，但是可能会将\n包括在内
-		if(msg[strlen(msg)-1]=='\n')
-			msg[strlen(msg)-1]='\0';
+		fgets(msg,MSG_LENGTH,stdin); //C11标准移除了gets()，只能用fgets()
 		if(msg[0]=='/')
 			switch(strscmp(msg,commands,sizeof(commands)/sizeof(char *)))
 			{
@@ -212,6 +230,13 @@ int main(int argc,char **argv)
 					continue;
 				case 2:
 					//qmsg
+					if(sscanf(msg,"/qmsg %d",&msg_no)<1)
+					{
+						fputs("Invalid command",stderr);
+						continue;
+					}
+					if(quickmsg("msg.txt",msg_no)==0)
+						break;
 					continue;
 				case 3:
 					goto connect;
@@ -224,6 +249,11 @@ int main(int argc,char **argv)
 					fputs("Unknown command\n",stderr);
 					continue;
 			}
+		if(is_server)
+		{
+			send_chat(-1,"[Server] ");
+			printf("[Server] %s",msg);;
+		}
 		send_chat(is_server?-1:sock,msg);
 	}
 	cleanup();

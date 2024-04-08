@@ -141,7 +141,7 @@ int send_chat(const int s,const char* msg)
 		}
 		is_server?logmsg(0,"A message has been sent to %d",s):logmsg(0,"A message has been sent to server");
 	}
-	else
+	else if(is_server)
 	{
 		struct client *i=c;
 		while(i!=NULL)
@@ -173,8 +173,7 @@ int recv_chat(void *p)
 					switch(strscmp(msg,commands,sizeof(commands)/sizeof(char *)))
 					{
 						case 0:
-							if(sscanf(msg,"/tell %d",&chat_peer)==1)
-								send_chat(s,chat_peer<0?"[Server] Public chat enabled":"[Server] Private chat enabled");
+							send_chat(s,sscanf(msg,"/tell %d",&chat_peer)==1?chat_peer<0?"[Server] Public chat enabled":"[Server] Private chat enabled":"Invalid command");
 							continue;
 						case 1:
 							current_users(s);
@@ -184,13 +183,16 @@ int recv_chat(void *p)
 							continue;
 					}
 				printf("<%s> ",lookup_client(s)->ip);
-				sprintf(prefix,"[%s] ",lookup_client(s)->ip);
-				send_chat(chat_peer,prefix);
-				send_chat(chat_peer,msg);
+				sprintf(prefix,chat_peer<0?"[%s] ":"<%s> ",lookup_client(s)->ip);
+				if(send_chat(chat_peer,prefix)<0||send_chat(chat_peer,msg)<0)
+				{
+					chat_peer<0?logmsg(2,"Message forward error"):logmsg(2,"Message send to %d error",chat_peer);
+					return -1;
+				}
 			}
 			else
 				logmsg(0,"Received a message from server");
-			printf("%s\n",msg);
+			printf("%s",msg);
 		}
 		else
 		{
