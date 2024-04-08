@@ -12,6 +12,7 @@ int accept_client(void *);
 int send_chat(const int s,const char* msg);
 int recv_chat(void *s);
 int disconnect_client(const int s);
-int current_users(void);
+unsigned int current_users(const int s);
 int quickmsg(const int n);
+int strscmp(const char *s,char* const *cmp,const int n);
 #endif

@@ -18,9 +18,18 @@ char msg[MSG_LENGTH];
 extern mtx_t mtx;
 int strscmp(const char *s,char* const *cmp,const int n)
 {
-	for(int i=0;i<n;i++)
-		if(!strcmp(s,*(cmp+i)))
+	for(int i=0,c;i<n;i++)
+	{
+		c=0;
+		while(s[c]&&cmp[i][c])
+		{
+			if(s[c]!=cmp[i][c])
+				break;
+			c++;
+		}
+		if(!s[c]||!cmp[i][c])
 			return i;
+	}
 	return -1;
 }
 void cleanup(void)
@@ -173,7 +182,7 @@ int main(int argc,char **argv)
 	ready=1;
 	//创建线程
 	thrd_t chat_th;
-	if(is_server&&thrd_create(&chat_th,accept_client,NULL)!=thrd_success)
+	if(is_server&&thrd_create(&chat_th,accept_client,&sock)!=thrd_success)
 	{
 		logmsg(3,"Failed to create thread");
 		fputs("Chat server not available due to thread error\n",stderr);
@@ -184,6 +193,7 @@ int main(int argc,char **argv)
 		fputs("Chat client not available due to thread error\n",stderr);
 	}
 	char* const commands[]={"/help","/list","/qmsg","/reconnect","/exit"};
+	FILE *msgfile;
 	while(ready)
 	{
 		fgets(msg,MSG_LENGTH,stdin); //C11标准移除了gets()，只能用fgets()，但是可能会将\n包括在内
@@ -196,7 +206,9 @@ int main(int argc,char **argv)
 					//help
 					continue;
 				case 1:
-					//list
+					if(!is_server)
+						break;
+					current_users(-1);
 					continue;
 				case 2:
 					//qmsg
@@ -207,12 +219,14 @@ int main(int argc,char **argv)
 					ready=0;
 					continue;
 				default:
+					if(!is_server)
+						break;
 					fputs("Unknown command\n",stderr);
 					continue;
 			}
 		send_chat(is_server?-1:sock,msg);
 	}
 	cleanup();
-	fputs("Bye!\n",stderr);
+	puts("Bye!");
 	return 0;
 }
