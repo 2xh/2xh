@@ -1,7 +1,8 @@
+//写程序时顺便写的简易日志系统，方便后期维护
 #include <stdio.h>
 #include <time.h>
-#include <stdarg.h>
-#define LOG_LEVEL 1
+#include <stdarg.h> //可变参数需要的头文件
+#define LOG_LEVEL 1 //日志记录阈值
 int logready=0;
 int log_to_file=1;
 FILE *logfile;
@@ -49,14 +50,14 @@ int logmsg(const int type,const char *msg,...)
 	time_t t=time(NULL);
 	char time_prefix[11];
 	char *type_prefix,*color_prefix;
-	va_list args;
+	va_list args; //可变参数
 	if(!logready)
 		return -1;
 	if(type<LOG_LEVEL)
 		return 1;
-	if(strftime(time_prefix,11,"[%X]",localtime(&t)))
+	if(strftime(time_prefix,11,"[%X]",localtime(&t))) //将时间转换为日志常用的格式
 		fprintf(logfile,"%s ",time_prefix);
-	switch(type)
+	switch(type) //日志类别，依次提高
 	{
 		case 0:color_prefix="",type_prefix="DEBUG";break;
 		case 1:color_prefix="\033[1;37m",type_prefix="INFO";break;
@@ -66,7 +67,7 @@ int logmsg(const int type,const char *msg,...)
 	}
 	va_start(args,msg);
 	print_log:
-	if(fprintf(logfile,"%s[%s] ",log_to_file?"":color_prefix,type_prefix),vfprintf(logfile,msg,args),fprintf(logfile,"%s\n",log_to_file?"":"\033[0m")<0)
+	if(fprintf(logfile,"%s[%s] ",log_to_file?"":color_prefix,type_prefix),vfprintf(logfile,msg,args),fprintf(logfile,"%s\n",log_to_file?"":"\033[0m")<0) //vprintf使用了可变参数
 	{
 		perror("Error writing log");
 		close_log();

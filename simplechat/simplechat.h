@@ -1,4 +1,4 @@
-#ifndef _SIMPLECHAT_H
+#ifndef _SIMPLECHAT_H //防止重定义
 #define _SIMPLECHAT_H
 #include <arpa/inet.h>
 #define MAX_CLIENTS 100
@@ -7,7 +7,7 @@ union sockaddrs {
 	struct sockaddr sa;
 	struct sockaddr_in s4;
 	struct sockaddr_in6 s6;
-};
+}; //sockaddr使用联合体即可支持IPv4/v6双协议
 int accept_client(void *);
 int send_chat(const int s,const char* msg);
 int recv_chat(void *s);
