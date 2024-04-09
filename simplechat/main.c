@@ -14,7 +14,7 @@ socklen_t addrlen;
 int sock=-1; //sockfd
 int is_server=0;
 int ready=0;
-char msg[MSG_LENGTH];
+char msg[MSG_LENGTH+1];
 extern mtx_t mtx;
 int strscmp(const char *s,char* const *cmp,const int n)
 {
@@ -54,6 +54,7 @@ int quickmsg(const char *msgname,const unsigned int n)
 	for(i=0;i<n&&!feof(msgfile);i++)
 		fgets(msg,MSG_LENGTH,msgfile);
 	fclose(msgfile);
+	msg[MSG_LENGTH-1]='\n';
 	if(i<n)
 	{
 		fputs("Too few lines\n",stderr);
@@ -217,6 +218,7 @@ int main(int argc,char **argv)
 	while(ready)
 	{
 		fgets(msg,MSG_LENGTH,stdin); //C11标准移除了gets()，只能用fgets()
+		msg[MSG_LENGTH-1]='\n';
 		if(msg[0]=='/')
 			switch(strscmp(msg,commands,sizeof(commands)/sizeof(char *)))
 			{
@@ -252,7 +254,7 @@ int main(int argc,char **argv)
 		if(is_server)
 		{
 			send_chat(-1,"[Server] ");
-			printf("[Server] %s",msg);;
+			printf("[Server] %s",msg);
 		}
 		send_chat(is_server?-1:sock,msg);
 	}

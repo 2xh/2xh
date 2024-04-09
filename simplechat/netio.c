@@ -31,20 +31,19 @@ struct client* lookup_client(const int s)
 unsigned int current_users(const int s)
 {
 	unsigned int count=0;
-	char *msg="SOCKET  PORT IP\n";
+	char *head="SOCKET  PORT IP\n";
+	char msg[14+INET6_ADDRSTRLEN];
 	struct client *i=c;
-	s>=0?send_chat(s,msg):fputs(msg,stdout);
-	msg=(char *)malloc(sizeof(char)*60);
+	s>=0?send_chat(s,head):fputs(head,stdout);
 	while(i!=NULL)
 	{
 		count++;
-		sprintf(msg,"%6d %5u %s\n",i->s,i->port,i->ip);
+		sprintf(msg,"%c%5d %5u %s\n",s==i->s?'*':' ',i->s,i->port,i->ip);
 		s>=0?send_chat(s,msg):fputs(msg,stdout);
 		i=i->next;
 	}
-	sprintf(msg,"Total: %u",count);
+	sprintf(msg,"Total: %u\n",count);
 	s>=0?send_chat(s,msg):puts(msg);
-	free(msg);
 	return count;
 }
 int accept_client(void *p)
@@ -134,7 +133,7 @@ int send_chat(const int s,const char* msg)
 {
 	if(s>=0)
 	{
-		if(send(s,msg,strlen(msg)+1,0)<0)
+		if(send(s,msg,strlen(msg),0)<0)
 		{
 			logmsg(2,"Message send to %d error",s);
 			return -1;
@@ -155,36 +154,48 @@ int send_chat(const int s,const char* msg)
 int recv_chat(void *p)
 {
 	const int s=*(int *)p;
-	char msg[MSG_LENGTH];
-	char prefix[INET6_ADDRSTRLEN+3];
+	char msg[INET6_ADDRSTRLEN+3+MSG_LENGTH]={0},*chat;
 	int state;
 	int chat_peer=-1;
+	if(is_server)
+		sprintf(msg,"[%s] ",lookup_client(s)->ip);
+	chat=msg+strlen(msg);
+	if(is_server)
+	{
+		sprintf(chat,"\033[1;33mJoined this chat as socket %d\033[0m\n",s);
+		printf(msg);
+		send_chat(-1,msg);
+	}
 	while(ready)
 	{
-		state=recv(s,msg,MSG_LENGTH-1,0);
+		state=recv(s,chat,MSG_LENGTH,0);
 		if(state<0)
 			logmsg(2,"Message read from %d error",s);
 		else if(state>0)
 		{
+			chat[state]='\0';
 			if(is_server)
 			{
 				logmsg(0,"Received a message from %d",s);
-				if(msg[0]=='/')
-					switch(strscmp(msg,commands,sizeof(commands)/sizeof(char *)))
+				if(chat[0]=='/')
+					switch(strscmp(chat,commands,sizeof(commands)/sizeof(char *)))
 					{
 						case 0:
-							send_chat(s,sscanf(msg,"/tell %d",&chat_peer)==1?chat_peer<0?"[Server] Public chat enabled":"[Server] Private chat enabled":"Invalid command");
+							sscanf(chat,"/tell %d",&chat_peer);
+							if(lookup_client(chat_peer)==NULL)
+								chat_peer=-1;
+							sprintf(chat,chat_peer<0?"Public chat\n":"Private chat to %d\n",chat_peer);
+							chat_peer<0?(msg[0]='[',msg[chat-msg-2]=']'):(msg[0]='<',msg[chat-msg-2]='>');
+							send_chat(s,msg);
 							continue;
 						case 1:
 							current_users(s);
 							continue;
 						default:
-							send_chat(s,"Unknown command");
+							send_chat(s,"Unknown command\n");
 							continue;
 					}
-				printf("<%s> ",lookup_client(s)->ip);
-				sprintf(prefix,chat_peer<0?"[%s] ":"<%s> ",lookup_client(s)->ip);
-				if(send_chat(chat_peer,prefix)<0||send_chat(chat_peer,msg)<0)
+				if(send_chat(chat_peer,msg)<0)
 				{
 					chat_peer<0?logmsg(2,"Message forward error"):logmsg(2,"Message send to %d error",chat_peer);
 					return -1;
@@ -192,13 +203,18 @@ int recv_chat(void *p)
 			}
 			else
 				logmsg(0,"Received a message from server");
-			printf("%s",msg);
+			printf(msg);
 		}
 		else
 		{
 			logmsg(1,"Peer %d disconnected",s);
 			if(is_server)
+			{
 				disconnect_client(s);
+				sprintf(chat,"\033[1;33mLeft this chat as socket %d\033[0m\n",s);
+				printf(msg);
+				send_chat(-1,msg);
+			}
 			else
 			{
 				logmsg(2,"Disconnected from server");
