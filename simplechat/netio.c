@@ -8,7 +8,8 @@
 #include <unistd.h>
 #include <sys/socket.h>
 extern socklen_t addrlen;
-extern int ready,is_server;
+extern int is_server;
+int ready=0;
 struct client {
 	int s;
 	char ip[INET6_ADDRSTRLEN];
@@ -100,7 +101,7 @@ int accept_client(void *p) //服务器模式下，在子线程中运行，循环
 	thrd_t th;
 	struct client *t,*i;
 	union sockaddrs addr;
-	while(ready)
+	while(is_server)
 	{
 		if((s=accept(sock,&addr.sa,&addrlen))>0)
 		{
@@ -178,10 +179,11 @@ int recv_chat(void *p) //服务器模式下，在子线程中运行，循环接�
 	if(is_server)
 		sprintf(msg,"[%s] ",lookup_client(s)->ip);
 	chat=msg+strlen(msg);
+	ready++;
 	if(is_server)
 	{
 		sprintf(chat,"\033[1;33mJoined this chat as socket %d\033[0m\n",s);
-		printf(msg);
+		fputs(msg,stdout);
 		send_chat(-1,msg);
 	}
 	while(ready)
@@ -223,7 +225,7 @@ int recv_chat(void *p) //服务器模式下，在子线程中运行，循环接�
 					return -1;
 				}
 			}
-			printf(msg);
+			fputs(msg,stdout);
 		}
 		else //state的值为0，客户端已断开连接
 		{
@@ -237,17 +239,18 @@ int recv_chat(void *p) //服务器模式下，在子线程中运行，循环接�
 			{
 				disconnect_client(s);
 				sprintf(chat,"\033[1;33mLeft this chat as socket %d\033[0m\n",s);
-				printf(msg);
+				fputs(msg,stdout);
 				send_chat(-1,msg);
 			}
 			else
 			{
 				logmsg(2,"Disconnected from server");
-				close_log();
-				close(s);
+				close(s),close_log();
 				puts("Disconnected from server, exiting now.");
-				exit(0);
+				if(ready>1)
+					exit(0);
 			}
+			ready--;
 			break;
 		}
 	}

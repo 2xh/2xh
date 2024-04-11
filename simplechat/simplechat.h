@@ -2,7 +2,7 @@
 #define _SIMPLECHAT_H
 #include <arpa/inet.h>
 #define MAX_CLIENTS 100
-#define MSG_LENGTH 255
+#define MSG_LENGTH 65535
 union sockaddrs {
 	struct sockaddr sa;
 	struct sockaddr_in s4;

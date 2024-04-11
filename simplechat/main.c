@@ -14,7 +14,8 @@ union sockaddrs addr;
 socklen_t addrlen;
 int sock=-1; //sockfd
 int is_server=0;
-int ready=0;
+extern int ready;
+thrd_t chat_th;
 char msg[MSG_LENGTH+1];
 extern mtx_t mtx;
 int strscmp(const char *s,char* const *cmp,const int n) //与由字符串组成的数组比较，只要前部相同即可，返回首先比较成功的字符串位置，没有则返回-1
@@ -36,12 +37,16 @@ int strscmp(const char *s,char* const *cmp,const int n) //与由字符串组成�
 void cleanup(void) //清理工作，包括关闭连接、关闭日志、销毁互斥体等
 {
 	if(ready)
-		logmsg(2,"Force shutting down...");
-	close_log();
+	{
+		logmsg(2,"Shutting down...");
+		if(is_server)
+			send_chat(-1,"[Server] Server closed\n");
+		shutdown(sock,SHUT_RDWR);
+		if(!is_server)
+			thrd_join(chat_th,NULL);
+	}
 	if(is_server)
-		mtx_destroy(&mtx);
-	if(sock>=0)
-		close(sock);
+		close(sock),close_log(),mtx_destroy(&mtx);
 }
 int quickmsg(const char *msgname,const unsigned int n) //发送指定文件的指定行
 {
@@ -227,9 +232,8 @@ int main(int argc,char** argv)
 			puts("Ready to chat");
 		}
 	}
-	ready=1;
 	//创建线程
-	thrd_t chat_th;
+	ready++;
 	if(is_server&&thrd_create(&chat_th,accept_client,&sock)!=thrd_success) //服务端创建接受客户端连接的线程
 	{
 		logmsg(3,"Failed to create thread");
@@ -243,7 +247,7 @@ int main(int argc,char** argv)
 	//输入内容或命令
 	char* const commands[]={"/help","/list","/qmsg","/exit","/kick"};
 	int no;
-	while(ready&&!feof(stdin))
+	while(!feof(stdin))
 	{
 		if(fgets(msg,MSG_LENGTH,stdin)==NULL) //C11标准移除了gets()，只能用fgets()
 			continue;
@@ -274,8 +278,7 @@ int main(int argc,char** argv)
 						break;
 					continue;
 				case 3:
-					ready=0;
-					continue;
+					goto cleanup;
 				case 4:
 					if(is_server)
 					{
@@ -310,6 +313,8 @@ int main(int argc,char** argv)
 		}
 		send_chat(is_server?-1:sock,msg);
 	}
+	cleanup:
+	ready--;
 	cleanup();
 	puts("Bye!");
 	return 0;
