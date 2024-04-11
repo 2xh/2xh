@@ -29,6 +29,11 @@ struct client* lookup_client(const int s) //链表查找，返回对应节点
 	}
 	return NULL;
 }
+int lookup_user(const int s) //包装函数，供其他功能使用
+{
+	struct client *i=lookup_client(s);
+	return i==NULL?-1:i->s;
+}
 unsigned int current_users(const int s) //列出用户，若为socket为s的客户端请求则发送给它
 {
 	unsigned int count=0;
@@ -47,70 +52,19 @@ unsigned int current_users(const int s) //列出用户，若为socket为s的客�
 	s>=0?send_chat(s,msg):puts(msg);
 	return count;
 }
-int accept_client(void *p) //服务器模式下，在子线程中运行，循环接受某个socket的客户端连接
-{
-	const int sock=*(int *)p;
-	int s;
-	thrd_t th;
-	struct client *t,*i;
-	union sockaddrs addr;
-	while(ready)
-	{
-		if((s=accept(sock,&addr.sa,&addrlen))>0)
-		{
-			if(mtx_lock(&mtx)==thrd_error) //锁上互斥锁，
-				logmsg(2,"mtx_lock failed");
-			//新建链表项
-			if((t=(struct client *)malloc(sizeof(struct client)))==NULL)
-			{
-				logmsg(3,"Failed to allocate memory");
-				fputs("Trying to record a new client, but no free memory left\n",stderr);
-				disconnect_client(s);
-				continue;
-			}
-			t->s=s,t->next=NULL;
-			//获取IP和端口
-			if(inet_ntop(addr.sa.sa_family,addr.sa.sa_family==AF_INET6?&addr.s6.sin6_addr:&addr.s4.sin_addr,t->ip,sizeof(t->ip))==NULL)
-				logmsg(2,"Invalid remote IP address");
-			t->port=ntohs(addr.s4.sin_port);
-			logmsg(1,"Remote address: [%s]:%u",t->ip,t->port);
-			//向链表添加数据
-			if(c==NULL)
-				c=t;
-			else
-			{
-				i=c;
-				while(i->next!=NULL)
-					i=i->next;
-				i->next=t;
-			}
-			mtx_unlock(&mtx); //解锁互斥锁
-			if(thrd_create(&th,recv_chat,&(t->s))!=thrd_success&&thrd_detach(th)) //创建接受数据的线程
-			{
-				logmsg(3,"Failed to create thread");
-				fputs("Chat server is not stable due to thread error\n",stderr);
-			}
-			logmsg(1,"Added a new client %d",t->s);
-		}
-		else
-		{
-			logmsg(2,"Failed to accept socket");
-			perror("Socket accept error");
-		}
-	}
-	return 0;
-}
 int disconnect_client(const int s) //断开值为s的socket
 {
 	struct client *i,*t;
+	int state=0;
 	if(close(s)<0) //断开连接
 	{
 		logmsg(2,"Socket %d close failed",s);
-		perror("Socket close error");
+		perror("\033[1;33mSocket close error\033[0m");
+		state|=1;
 	}
 	//尝试删除链接相关项
 	if(!is_server||c==NULL)
-		return -1;
+		state|=2;
 	else
 	{
 		if(mtx_lock(&mtx)==thrd_error)
@@ -137,6 +91,59 @@ int disconnect_client(const int s) //断开值为s的socket
 		mtx_unlock(&mtx);
 	}
 	logmsg(1,"Removed client %d",s);
+	return -state;
+}
+int accept_client(void *p) //服务器模式下，在子线程中运行，循环接受某个socket的客户端连接
+{
+	const int sock=*(int *)p;
+	int s;
+	thrd_t th;
+	struct client *t,*i;
+	union sockaddrs addr;
+	while(ready)
+	{
+		if((s=accept(sock,&addr.sa,&addrlen))>0)
+		{
+			if(mtx_lock(&mtx)==thrd_error) //锁上互斥锁
+				logmsg(2,"mtx_lock failed");
+			//新建链表项
+			if((t=(struct client *)malloc(sizeof(struct client)))==NULL)
+			{
+				logmsg(3,"Failed to allocate memory");
+				fputs("\033[1;33mTrying to record a new client, but no free memory left\033[0m\n",stderr);
+				disconnect_client(s);
+				continue;
+			}
+			t->s=s,t->next=NULL;
+			//获取IP和端口
+			if(inet_ntop(addr.sa.sa_family,addr.sa.sa_family==AF_INET6?&addr.s6.sin6_addr:&addr.s4.sin_addr,t->ip,sizeof(t->ip))==NULL)
+				logmsg(2,"Invalid remote IP address");
+			t->port=ntohs(addr.s4.sin_port);
+			logmsg(1,"Remote address: [%s]:%u",t->ip,t->port);
+			//向链表添加数据
+			if(c==NULL)
+				c=t;
+			else
+			{
+				i=c;
+				while(i->next!=NULL)
+					i=i->next;
+				i->next=t;
+			}
+			mtx_unlock(&mtx); //解锁互斥锁
+			if(thrd_create(&th,recv_chat,&(t->s))!=thrd_success&&thrd_detach(th)) //创建接受数据的线程
+			{
+				logmsg(3,"Failed to create thread");
+				fputs("\033[1;33mChat server is not stable due to thread error\033[0m\n",stderr);
+			}
+			logmsg(1,"Added a new client %d",t->s);
+		}
+		else
+		{
+			logmsg(2,"Failed to accept socket");
+			perror("\033[1;33mSocket accept error\033[0m");
+		}
+	}
 	return 0;
 }
 int send_chat(const int s,const char* msg) //向值为s的socket发送字符串msg
@@ -146,7 +153,7 @@ int send_chat(const int s,const char* msg) //向值为s的socket发送字符串m
 		if(send(s,msg,strlen(msg),0)<0)
 		{
 			logmsg(2,"Message send to %d error",s);
-			perror("Socket send error");
+			perror("\033[1;33mSocket send error\033[0m");
 			return -1;
 		}
 		is_server?logmsg(0,"A message has been sent to %d",s):logmsg(0,"A message has been sent to server");
@@ -180,12 +187,7 @@ int recv_chat(void *p) //服务器模式下，在子线程中运行，循环接�
 	while(ready)
 	{
 		state=recv(s,chat,MSG_LENGTH,0);
-		if(state<0) //接收出错
-		{
-			logmsg(2,"Message read from %d error",s);
-			perror("Socket receive error");
-		}
-		else if(state>0) //收到数据
+		if(state>0) //收到数据
 		{
 			chat[state]='\0';
 			logmsg(0,is_server?"Received a message from server":"Received a message from %d",s);
@@ -225,6 +227,11 @@ int recv_chat(void *p) //服务器模式下，在子线程中运行，循环接�
 		}
 		else //state的值为0，客户端已断开连接
 		{
+			if(state<0) //接收出错
+			{
+				logmsg(2,"Message read from %d error",s);
+				perror("\033[1;33mSocket receive error\033[0m");
+			}
 			logmsg(1,"Peer %d disconnected",s);
 			if(is_server)
 			{
