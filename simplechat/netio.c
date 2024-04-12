@@ -105,8 +105,6 @@ int accept_client(void *p) //服务器模式下，在子线程中运行，循环
 	{
 		if((s=accept(sock,&addr.sa,&addrlen))>0)
 		{
-			if(mtx_lock(&mtx)==thrd_error) //锁上互斥锁
-				logmsg(2,"mtx_lock failed");
 			//新建链表项
 			if((t=(struct client *)malloc(sizeof(struct client)))==NULL)
 			{
@@ -122,6 +120,8 @@ int accept_client(void *p) //服务器模式下，在子线程中运行，循环
 			t->port=ntohs(addr.s4.sin_port);
 			logmsg(1,"Remote address: [%s]:%u",t->ip,t->port);
 			//向链表添加数据
+			if(mtx_lock(&mtx)==thrd_error) //锁上互斥锁
+				logmsg(2,"mtx_lock failed");
 			if(c==NULL)
 				c=t;
 			else
