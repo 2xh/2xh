@@ -14,5 +14,5 @@ int recv_chat(void *s);
 int lookup_user(const int s);
 unsigned int current_users(const int s);
 int quickmsg(const char *msgname,const unsigned int n);
-int strscmp(const char *s,char* const *cmp,const int n);
+int strscmp(const char *s,char* const *cmp,const unsigned int n);
 #endif

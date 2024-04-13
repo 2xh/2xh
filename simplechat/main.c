@@ -19,17 +19,13 @@ extern int ready;
 thrd_t chat_th;
 char msg[MSG_LENGTH+1];
 extern mtx_t mtx;
-int strscmp(const char *s,char* const *cmp,const int n) //与由字符串组成的数组比较，只要前部相同即可，返回首先比较成功的字符串位置，没有则返回-1
+int strscmp(const char *s,char* const *cmp,const unsigned int n) //与由字符串组成的数组比较，只要前部相同即可，返回首先比较成功的字符串位置，没有则返回-1
 {
-	for(int i=0,c;i<n;i++)
+	for(unsigned int i=0,c;i<n;i++)
 	{
-		c=0;
-		while(s[c]&&cmp[i][c])
-		{
+		for(c=0;s[c]&&cmp[i][c];c++)
 			if(s[c]!=cmp[i][c])
 				break;
-			c++;
-		}
 		if(!s[c]||!cmp[i][c])
 			return i;
 	}
@@ -39,7 +35,7 @@ void cleanup(void) //清理工作，包括关闭连接、关闭日志、销毁�
 {
 	if(ready)
 	{
-		logmsg(2,"Shutting down...");
+		logmsg(1,"Shutting down...");
 		if(is_server)
 			send_chat(-1,"[Server] Server closed\n");
 		shutdown(sock,SHUT_RDWR);
@@ -51,7 +47,7 @@ void cleanup(void) //清理工作，包括关闭连接、关闭日志、销毁�
 }
 int quickmsg(const char *msgname,const unsigned int n) //发送指定文件的指定行
 {
-	int i;
+	unsigned int i;
 	FILE *msgfile;
 	if((msgfile=fopen(msgname,"r"))==NULL)
 	{

@@ -20,14 +20,9 @@ mtx_t mtx; //互斥锁
 char* const commands[]={"/tell","/list","/ping"};
 struct client* lookup_client(const int s) //链表查找，返回对应节点
 {
-	struct client *i=c;
-	while(i!=NULL)
-	{
+	for(struct client *i=c;i!=NULL;i=i->next)
 		if(i->s==s)
 			return i;
-		else
-			i=i->next;
-	}
 	return NULL;
 }
 int lookup_user(const int s) //包装函数，供其他功能使用
@@ -40,14 +35,12 @@ unsigned int current_users(const int s) //列出用户，若为socket为s的客�
 	unsigned int count=0;
 	char *head="SOCKET  PORT IP\n";
 	char msg[14+INET6_ADDRSTRLEN];
-	struct client *i=c;
 	s>=0?send_chat(s,head):fputs(head,stdout);
-	while(i!=NULL)
+	for(struct client *i=c;i!=NULL;i=i->next)
 	{
 		count++;
 		sprintf(msg,"%c%5d %5u %s\n",s==i->s?'*':' ',i->s,i->port,i->ip);
 		s>=0?send_chat(s,msg):fputs(msg,stdout);
-		i=i->next;
 	}
 	sprintf(msg,"Total: %u\n",count);
 	s>=0?send_chat(s,msg):puts(msg);
@@ -126,9 +119,7 @@ int accept_client(void *p) //服务器模式下，在子线程中运行，循环
 				c=t;
 			else
 			{
-				i=c;
-				while(i->next!=NULL)
-					i=i->next;
+				for(i=c;i->next!=NULL;i=i->next);
 				i->next=t;
 			}
 			mtx_unlock(&mtx); //解锁互斥锁
@@ -160,14 +151,8 @@ int send_chat(const int s,const char* msg) //向值为s的socket发送字符串m
 		is_server?logmsg(0,"A message has been sent to %d",s):logmsg(0,"A message has been sent to server");
 	}
 	else if(is_server)
-	{
-		struct client *i=c;
-		while(i!=NULL)
-		{
+		for(struct client *i=c;i!=NULL;i=i->next)
 			send_chat(i->s,msg);
-			i=i->next;
-		}
-	}
 	return 0;
 }
 int recv_chat(void *p) //服务器模式下，在子线程中运行，循环接受某个socket的客户端消息
@@ -211,18 +196,20 @@ int recv_chat(void *p) //服务器模式下，在子线程中运行，循环接�
 						current_users(s);
 						continue;
 					case 2:
-						send_chat(s,"Connected\n");
+						send_chat(s,"\033[1;37mConnected\033[0m\n");
 						continue;
 					default:
-						send_chat(s,"Unknown command\n");
+						send_chat(s,"\033[1;31mUnknown command\033[0m\n");
 						continue;
 				}
 				if(send_chat(chat_peer,msg)<0)
 				{
 					chat_peer<0?logmsg(2,"Message forward error"):logmsg(2,"Message send to %d error",chat_peer);
 					if(chat_peer>=0)
-						send_chat(s,"Message forward error\n");
-					return -1;
+					{
+						send_chat(s,"\033[1;33mMessage forward error, reset to public chat\033[0m\n");
+						chat_peer=-1;
+					}
 				}
 			}
 			fputs(msg,stdout);
