@@ -49,17 +49,16 @@ unsigned int current_users(const int s) //列出用户，若为socket为s的客�
 int disconnect_client(const int s) //断开值为s的socket
 {
 	struct client *i,*t;
-	int state=0;
+	int state=0; //控制返回值
 	if(close(s)<0) //断开连接
 	{
 		logmsg(2,"Socket %d close failed",s);
 		perror("\033[1;33mSocket close error\033[0m");
-		state|=1;
+		state+=1;
 	}
+	state+=2;
 	//尝试删除链接相关项
-	if(!is_server||c==NULL)
-		state|=2;
-	else
+	if(is_server&&c!=NULL)
 	{
 		if(mtx_lock(&mtx)==thrd_error)
 			logmsg(2,"mtx_lock failed");
@@ -68,6 +67,7 @@ int disconnect_client(const int s) //断开值为s的socket
 		{
 			c=i->next;
 			free(i);
+			state-=2;
 		}
 		else
 			while(i->next!=NULL)
@@ -77,6 +77,7 @@ int disconnect_client(const int s) //断开值为s的socket
 					t=i->next;
 					i->next=t->next;
 					free(t);
+					state-=2;
 					break;
 				}
 				else
@@ -84,8 +85,9 @@ int disconnect_client(const int s) //断开值为s的socket
 			}
 		mtx_unlock(&mtx);
 	}
-	logmsg(1,"Removed client %d",s);
-	return -state;
+	if(state<2)
+		logmsg(1,"Removed client %d",s);
+	return state;
 }
 int accept_client(void *p) //服务器模式下，在子线程中运行，循环接受某个socket的客户端连接
 {
@@ -140,6 +142,7 @@ int accept_client(void *p) //服务器模式下，在子线程中运行，循环
 }
 int send_chat(const int s,const char* msg) //向值为s的socket发送字符串msg
 {
+	int state=0;
 	if(s>=0)
 	{
 		if(send(s,msg,strlen(msg),0)<0)
@@ -152,8 +155,10 @@ int send_chat(const int s,const char* msg) //向值为s的socket发送字符串m
 	}
 	else if(is_server)
 		for(struct client *i=c;i!=NULL;i=i->next)
-			send_chat(i->s,msg);
-	return 0;
+			state+=send_chat(i->s,msg);
+	else
+		return 1;
+	return state;
 }
 int recv_chat(void *p) //服务器模式下，在子线程中运行，循环接受某个socket的客户端消息
 {
@@ -214,7 +219,7 @@ int recv_chat(void *p) //服务器模式下，在子线程中运行，循环接�
 			}
 			fputs(msg,stdout);
 		}
-		else //state的值为0，客户端已断开连接
+		else //state的值不大于0，客户端已断开连接
 		{
 			if(state<0) //接收出错
 			{

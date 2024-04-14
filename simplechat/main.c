@@ -198,12 +198,12 @@ int main(int argc,char** argv)
 			perror("\033[1;31mFailed to listen on socket\033[0m");
 			fputs("\033[1;37mPlease use command to try again.\033[0m\n",stderr);
 		}
-		else //客户端使用connect()连接
+		else
 		{
 			logmsg(1,"Socket listening");
 			puts("Ready to receive connection");
 		}
-	else
+	else //客户端使用connect()连接
 	{
 		logmsg(1,"Connecting to server");
 		fputs("Trying to connect, this may take some time...\n",stderr);
