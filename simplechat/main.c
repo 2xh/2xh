@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <threads.h>
-#include <signal.h> //防止SIGPIPE信号导致程序意外退出
 #include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -230,7 +229,6 @@ int main(int argc,char** argv)
 		}
 	}
 	//创建线程
-	signal(SIGPIPE,SIG_IGN); //忽略SIGPIPE信号
 	ready++;
 	if(is_server&&thrd_create(&chat_th,accept_client,&sock)!=thrd_success) //服务端创建接受客户端连接的线程
 	{

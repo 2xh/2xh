@@ -145,7 +145,7 @@ int send_chat(const int s,const char* msg) //向值为s的socket发送字符串m
 	int state=0;
 	if(s>=0)
 	{
-		if(send(s,msg,strlen(msg),0)<0)
+		if(send(s,msg,strlen(msg),MSG_NOSIGNAL)<0)
 		{
 			logmsg(2,"Message send to %d error",s);
 			perror("\033[1;33mSocket send error\033[0m");
