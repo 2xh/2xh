@@ -53,7 +53,7 @@ int quickmsg(const char *msgname,const unsigned int n) //发送指定文件的�
 		perror("\033[1;33mFailed to open msgfile\033[0m");
 		return -1;
 	}
-	for(i=0;i<n&&!feof(msgfile);i++)
+	for(i=0;i<n;i++)
 		if(fgets(msg,MSG_LENGTH,msgfile)==NULL)
 			break;
 	fclose(msgfile);

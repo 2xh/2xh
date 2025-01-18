@@ -43,7 +43,7 @@ unsigned int current_users(const int s) //列出用户，若为socket为s的客�
 		s>=0?send_chat(s,msg):fputs(msg,stdout);
 	}
 	sprintf(msg,"Total: %u\n",count);
-	s>=0?send_chat(s,msg):puts(msg);
+	s>=0?send_chat(s,msg):fputs(msg,stdout);
 	return count;
 }
 int disconnect_client(const int s) //断开值为s的socket
